@@ -189,8 +189,8 @@ class arabidopsisStrainClassifier(object):
 class germRegressor(object):
     model = None
 
-    img_height = 71
-    img_width = 829
+    img_height = 179
+    img_width = 998
 
     __dir_name = 'germ-counter'
 
@@ -218,25 +218,22 @@ class germRegressor(object):
 
         self.model.add_input_layer()
 
-        self.model.add_convolutional_layer(filter_dimension=[11, 11, 3, 32], stride_length=1, activation_function='tanh',
-                                      regularization_coefficient=0.0)
+        self.model.add_convolutional_layer(filter_dimension=[11, 11, 3, 64], stride_length=1, activation_function='tanh')
         self.model.add_pooling_layer(kernel_size=3, stride_length=2)
 
-        self.model.add_convolutional_layer(filter_dimension=[5, 5, 32, 64], stride_length=1, activation_function='tanh',
-                                      regularization_coefficient=0.0)
+        self.model.add_convolutional_layer(filter_dimension=[5, 5, 64, 64], stride_length=1, activation_function='tanh')
         self.model.add_pooling_layer(kernel_size=3, stride_length=2)
 
-        self.model.add_convolutional_layer(filter_dimension=[5, 5, 64, 64], stride_length=1, activation_function='tanh',
-                                      regularization_coefficient=0.0)
+        self.model.add_convolutional_layer(filter_dimension=[5, 5, 64, 64], stride_length=1, activation_function='tanh')
         self.model.add_pooling_layer(kernel_size=3, stride_length=2)
 
-        self.model.add_convolutional_layer(filter_dimension=[3, 3, 64, 64], stride_length=1, activation_function='tanh',
-                                      regularization_coefficient=0.0)
+        self.model.add_convolutional_layer(filter_dimension=[3, 3, 64, 64], stride_length=1, activation_function='tanh')
         self.model.add_pooling_layer(kernel_size=3, stride_length=2)
 
-        self.model.add_convolutional_layer(filter_dimension=[3, 3, 64, 64], stride_length=1, activation_function='tanh',
-                                      regularization_coefficient=0.0)
+        self.model.add_convolutional_layer(filter_dimension=[3, 3, 64, 64], stride_length=1, activation_function='tanh')
         self.model.add_pooling_layer(kernel_size=3, stride_length=2)
+
+        self.model.add_fully_connected_layer(output_size=1024, activation_function='relu')
 
         self.model.add_output_layer()
 
