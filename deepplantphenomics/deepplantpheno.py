@@ -249,7 +249,8 @@ class DPPModel(object):
         elif type == 'regression':
             self.__problem_type = definitions.ProblemType.REGRESSION
         else:
-            warnings.warn('Problem type specified not supported', stacklevel=2)
+            warnings.warn('Problem type specified not supported')
+            exit()
 
     def begin_training(self):
         """
@@ -258,9 +259,6 @@ class DPPModel(object):
         the session is shut down.
         Before calling this function, the images and labels should be loaded, as well as all relevant hyperparameters.
         """
-
-        self.__log('Beginning training...')
-
         with self.__graph.as_default():
             # Define batches
             if self.__has_moderation:
@@ -289,9 +287,6 @@ class DPPModel(object):
             else:
                 xx = self.forward_pass(x, deterministic=False)
 
-            if self.__problem_type == definitions.ProblemType.CLASSIFICATION:
-                class_predictions = tf.argmax(tf.nn.softmax(xx), 1)
-
             # Define regularization cost
             if self.__reg_coeff is not None:
                 l2_cost = [layer.regularization_coefficient * tf.nn.l2_loss(layer.weights) for layer in self.__layers
@@ -315,11 +310,15 @@ class DPPModel(object):
             elif self.__optimizer == 'SGD':
                 optimizer = tf.train.GradientDescentOptimizer(self.__learning_rate).minimize(cost)
                 self.__log('Using SGD optimizer')
-            else:
+            elif self.__optimizer == 'Adam':
                 optimizer = tf.train.AdamOptimizer(self.__learning_rate).minimize(cost)
                 self.__log('Using Adam optimizer')
+            else:
+                warnings.warn('Unrecognized optimizer requested')
+                exit()
 
             if self.__problem_type == definitions.ProblemType.CLASSIFICATION:
+                class_predictions = tf.argmax(tf.nn.softmax(xx), 1)
                 correct_predictions = tf.equal(class_predictions, tf.argmax(y, 1))
                 accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
@@ -422,6 +421,8 @@ class DPPModel(object):
 
                 self.__initialize_queue_runners()
 
+                self.__log('Beginning training...')
+
                 for i in range(self.__maximum_training_batches):
                     start_time = time.time()
                     self.__global_epoch = i
@@ -506,7 +507,7 @@ class DPPModel(object):
                 exit()
 
             sum = 0.0
-            all_losses = np.empty(shape=(4, 1))
+            all_losses = np.empty(shape=(self.__num_regression_outputs))
 
             for i in range(num_batches):
                 if self.__has_moderation:
@@ -534,7 +535,13 @@ class DPPModel(object):
                     sum = sum + test_acc
                 elif self.__problem_type == definitions.ProblemType.REGRESSION:
                     y_test = loaders.label_string_to_tensor(y_test, self.__batch_size, self.__num_regression_outputs)
-                    losses = tf.subtract(x_test_predicted, y_test)
+
+                    # If we are just doing 1 output, we might want to know absolute values, so don't do L2 norm
+                    if self.__num_regression_outputs == 1:
+                        losses = tf.squeeze(tf.stack(tf.subtract(x_test_predicted, y_test)))
+                    else:
+                        losses = self.__l2_norm(tf.subtract(x_test_predicted, y_test))
+
                     all_losses = tf.concat([all_losses, losses], axis=0)
 
             if self.__problem_type == definitions.ProblemType.CLASSIFICATION:
@@ -598,9 +605,14 @@ class DPPModel(object):
         """Save all trainable variables as a checkpoint in the current working path"""
         self.__log('Saving parameters...')
 
+        dir = './saved_state'
+
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+
         with self.__graph.as_default():
             saver = tf.train.Saver(tf.trainable_variables())
-            saver.save(self.__session, 'tfhSaved')
+            saver.save(self.__session, dir+'/tfhSaved')
 
         self.__has_trained = True
 
@@ -619,6 +631,7 @@ class DPPModel(object):
             self.__has_trained = True
         else:
             warnings.warn('Tried to load state with no file given. Make sure load_from_saved is set in constructor.')
+            exit()
 
     def __set_learning_rate(self):
         if self.__lr_decay_factor is not None:
@@ -665,6 +678,7 @@ class DPPModel(object):
                 total_outputs = np.empty([1, self.__num_regression_outputs])
             else:
                 warnings.warn('Problem type is not recognized')
+                exit()
 
             num_batches = len(x) / self.__batch_size
             remainder = len(x) % self.__batch_size
@@ -702,10 +716,17 @@ class DPPModel(object):
     def __batch_mean_l2_loss(self, x):
         """Given a batch of vectors, calculates the mean per-vector L2 norm"""
         with self.__graph.as_default():
-            agg = tf.map_fn(lambda ex: tf.sqrt(tf.reduce_sum(ex ** 2)), x)
+            agg = self.__l2_norm(x)
             mean = tf.reduce_mean(agg)
 
         return mean
+
+    def __l2_norm(self, x):
+        """Returns the L2 norm of a tensor"""
+        with self.__graph.as_default():
+            y = tf.map_fn(lambda ex: tf.sqrt(tf.reduce_sum(ex ** 2)), x)
+
+        return y
 
     def add_input_layer(self):
         """Add an input layer to the network"""
@@ -872,6 +893,7 @@ class DPPModel(object):
                 num_out = self.__num_regression_outputs
             else:
                 warnings.warn('Problem type is not recognized')
+                exit()
         else:
             num_out = output_size
 
