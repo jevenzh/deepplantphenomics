@@ -35,6 +35,4 @@ class tools(object):
         # Convert from class probabilities to labels
         indices = np.argmax(predictions, axis=1)
         mapping = {0: 'Col-0', 1: 'ein2', 2: 'pgm', 3: 'adh1', 4: 'ctr'}
-        labels = [mapping[index] for index in indices]
-
-        return labels
+        return [mapping[index] for index in indices]

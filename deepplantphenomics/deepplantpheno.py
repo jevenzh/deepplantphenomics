@@ -139,7 +139,11 @@ class DPPModel(object):
         return self.__layers[-1]
 
     def __first_layer(self):
-        return next(layer for layer in self.__layers if isinstance(layer, layers.convLayer) or isinstance(layer, layers.fullyConnectedLayer))
+        return next(
+            layer
+            for layer in self.__layers
+            if isinstance(layer, (layers.convLayer, layers.fullyConnectedLayer))
+        )
 
     def __initialize_queue_runners(self):
         self.__log('Initializing queue runners...')
