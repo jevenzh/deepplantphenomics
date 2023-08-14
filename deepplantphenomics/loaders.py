@@ -43,9 +43,7 @@ def split_raw_data(images, labels, ratio, moderation_features=None, augmentation
 def label_string_to_tensor(x, batch_size, num_outputs):
     sparse = tf.string_split(x, delimiter=' ')
     values = tf.string_to_number(sparse.values)
-    dense = tf.reshape(values, (batch_size, num_outputs))
-
-    return dense
+    return tf.reshape(values, (batch_size, num_outputs))
 
 
 def read_csv_labels(file_name, column_number=False, character=','):
@@ -98,7 +96,7 @@ def read_csv_multi_labels_and_ids(file_name, id_column_number, character=','):
 
 
 def string_labels_to_sequential(labels):
-    unique = set([label.strip() for label in labels])
+    unique = {label.strip() for label in labels}
     num_labels = range(len(unique))
     seq_labels = dict(zip(unique, num_labels))
 

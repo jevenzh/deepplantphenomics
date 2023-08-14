@@ -32,19 +32,25 @@ class convLayer(object):
         self.output_size[-1] = filter_dimension[-1]
 
         if initializer == 'xavier':
-            self.weights = tf.get_variable(self.name + '_weights',
-                                           shape=self.filter_dimension,
-                                           initializer=tf.contrib.layers.xavier_initializer_conv2d())
+            self.weights = tf.get_variable(
+                f'{self.name}_weights',
+                shape=self.filter_dimension,
+                initializer=tf.contrib.layers.xavier_initializer_conv2d(),
+            )
         else:
-            self.weights = tf.get_variable(self.name + '_weights',
-                                           shape=self.filter_dimension,
-                                           initializer=tf.truncated_normal_initializer(stddev=5e-2),
-                                           dtype=tf.float32)
+            self.weights = tf.get_variable(
+                f'{self.name}_weights',
+                shape=self.filter_dimension,
+                initializer=tf.truncated_normal_initializer(stddev=5e-2),
+                dtype=tf.float32,
+            )
 
-        self.biases = tf.get_variable(self.name + '_bias',
-                                      [self.output_size[-1]],
-                                      initializer=tf.constant_initializer(0.1),
-                                      dtype=tf.float32)
+        self.biases = tf.get_variable(
+            f'{self.name}_bias',
+            [self.output_size[-1]],
+            initializer=tf.constant_initializer(0.1),
+            dtype=tf.float32,
+        )
 
     def forward_pass(self, x, deterministic):
         # For convention, just use a symmetrical stride with same padding
@@ -131,18 +137,27 @@ class fullyConnectedLayer(object):
             vec_size = input_size
 
         if initializer == 'xavier':
-            self.weights = tf.get_variable(self.name + '_weights', shape=[vec_size, output_size],
-                                           initializer=tf.contrib.layers.xavier_initializer())
+            self.weights = tf.get_variable(
+                f'{self.name}_weights',
+                shape=[vec_size, output_size],
+                initializer=tf.contrib.layers.xavier_initializer(),
+            )
         else:
-            self.weights = tf.get_variable(self.name + '_weights',
-                                           shape=[vec_size, output_size],
-                                           initializer=tf.truncated_normal_initializer(stddev=math.sqrt(2.0/self.output_size)),
-                                           dtype=tf.float32)
+            self.weights = tf.get_variable(
+                f'{self.name}_weights',
+                shape=[vec_size, output_size],
+                initializer=tf.truncated_normal_initializer(
+                    stddev=math.sqrt(2.0 / self.output_size)
+                ),
+                dtype=tf.float32,
+            )
 
-        self.biases = tf.get_variable(self.name + '_bias',
-                                      [self.output_size],
-                                      initializer=tf.constant_initializer(0.1),
-                                      dtype=tf.float32)
+        self.biases = tf.get_variable(
+            f'{self.name}_bias',
+            [self.output_size],
+            initializer=tf.constant_initializer(0.1),
+            dtype=tf.float32,
+        )
 
     def forward_pass(self, x, deterministic):
         # Reshape into a column vector if necessary
@@ -202,10 +217,7 @@ class dropoutLayer(object):
         self.p = p
 
     def forward_pass(self, x, deterministic):
-        if deterministic:
-            return x
-        else:
-            return tf.nn.dropout(x, self.p)
+        return x if deterministic else tf.nn.dropout(x, self.p)
 
 
 class moderationLayer(object):

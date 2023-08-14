@@ -178,9 +178,7 @@ class arabidopsisStrainClassifier(object):
         self.model.add_output_layer(output_size=5)
 
     def forward_pass(self, x):
-        y = self.model.forward_pass_with_file_inputs(x)
-
-        return y
+        return self.model.forward_pass_with_file_inputs(x)
 
     def shut_down(self):
         self.model.shut_down()
